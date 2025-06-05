@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>旅のしおり自動生成アプリ</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 800px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 30px;
+      border-radius: 12px;
+      margin: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #444;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      box-sizing: border-box;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      transition: all 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+    .saved-trips {
+      margin-top: 30px;
+    }
+    .trip-item {
+      background: #f9fafb;
+      padding: 15px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .trip-details {
+      flex: 1;
+    }
+    .delete-btn {
+      background: linear-gradient(135deg, #e53e3e, #c53030);
+      border: none;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      transition: all 0.2s;
+    }
+    .delete-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌍 旅のしおり自動生成アプリ</h1>
+    <label>旅行名</label>
+    <input type="text" id="tripName" placeholder="例：沖縄旅行">
+    <label>目的地</label>
+    <input type="text" id="destination" placeholder="例：沖縄県">
+    <label>開始日</label>
+    <input type="date" id="startDate">
+    <label>終了日</label>
+    <input type="date" id="endDate">
+
+    <div class="button-group">
+      <button onclick="saveTrip()">💾 旅行を保存</button>
+      <button onclick="clearForm()">🧹 フォームをクリア</button>
+    </div>
+
+    <div class="saved-trips">
+      <h2>💼 保存された旅行</h2>
+      <div id="savedTripsList"></div>
+    </div>
+  </div>
+
+  <script>
+    $(document).ready(function() {
+      loadSavedTrips();
+    });
+
+    function saveTrip() {
+      const name = $('#tripName').val().trim();
+      const destination = $('#destination').val().trim();
+      const startDate = $('#startDate').val();
+      const endDate = $('#endDate').val();
+
+      if (!name || !destination || !startDate || !endDate) {
+        alert('すべての項目を入力してください。');
+        return;
+      }
+
+      const trip = {
+        id: Date.now(),
+        name: name,
+        destination: destination,
+        startDate: startDate,
+        endDate: endDate
+      };
+
+      let savedTrips = JSON.parse(localStorage.getItem('travelItineraries')) || [];
+      savedTrips.push(trip);
+      localStorage.setItem('travelItineraries', JSON.stringify(savedTrips));
+
+      alert('旅行を保存しました！');
+      loadSavedTrips();
+      clearForm();
+    }
+
+    function loadSavedTrips() {
+      const savedTrips = JSON.parse(localStorage.getItem('travelItineraries')) || [];
+      const container = $('#savedTripsList');
+      container.empty();
+
+      if (savedTrips.length === 0) {
+        container.append('<p>保存された旅行はありません。</p>');
+        return;
+      }
+
+      savedTrips.forEach(trip => {
+        const tripHtml = `
+          <div class="trip-item">
+            <div class="trip-details">
+              <strong>${trip.name}</strong><br>
+              📍${trip.destination}<br>
+              📅 ${trip.startDate} ～ ${trip.endDate}
+            </div>
+            <button class="delete-btn" onclick="deleteTrip(${trip.id})">🗑️ 削除</button>
+          </div>
+        `;
+        container.append(tripHtml);
+      });
+    }
+
+    function deleteTrip(tripId) {
+      if (!confirm('この旅行を削除しますか？')) return;
+
+      let savedTrips = JSON.parse(localStorage.getItem('travelItineraries')) || [];
+      savedTrips = savedTrips.filter(trip => trip.id !== tripId);
+      localStorage.setItem('travelItineraries', JSON.stringify(savedTrips));
+
+      loadSavedTrips();
+    }
+
+    function clearForm() {
+      $('#tripName').val('');
+      $('#destination').val('');
+      $('#startDate').val('');
+      $('#endDate').val('');
+    }
+  </script>
+</body>
+</html>
